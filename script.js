@@ -1,0 +1,163 @@
+// State and storage
+var milionarie = 1000000;
+var dinheiroEmBanco = Number(localStorage.getItem('dinheiroEmBanco')) || 7000;
+var transactions = [];
+try { transactions = JSON.parse(localStorage.getItem('transactions') || '[]'); } catch(e) { transactions = []; }
+var historyPage = 1;
+var pageSize = 10;
+
+// Map currency -> country, flag (ISO-2) and display name
+var CURRENCIES = {
+  VES: { country: 'Venezuela', flag: 've', name: 'Bolívar Soberano (VES)' },
+  IRR: { country: 'Irã', flag: 'ir', name: 'Rial Iraniano (IRR)' },
+  VND: { country: 'Vietnã', flag: 'vn', name: 'Dong Vietnamita (VND)' },
+  IDR: { country: 'Indonésia', flag: 'id', name: 'Rupia Indonésia (IDR)' },
+  UZS: { country: 'Uzbequistão', flag: 'uz', name: 'Som Uzbeque (UZS)' },
+  LAK: { country: 'Laos', flag: 'la', name: 'Kip (LAK)' },
+  PYG: { country: 'Paraguai', flag: 'py', name: 'Guarani (PYG)' },
+  KHR: { country: 'Camboja', flag: 'kh', name: 'Riel Cambojano (KHR)' },
+  SLL: { country: 'Serra Leoa', flag: 'sl', name: 'Leone (SLL)' },
+  GNF: { country: 'Guiné', flag: 'gn', name: 'Franco Guineano (GNF)' },
+  AOA: { country: 'Angola', flag: 'ao', name: 'Kwanza (AOA)' },
+  ARS: { country: 'Argentina', flag: 'ar', name: 'Peso Argentino (ARS)' },
+  CLP: { country: 'Chile', flag: 'cl', name: 'Peso Chileno (CLP)' },
+  COP: { country: 'Colômbia', flag: 'co', name: 'Peso Colombiano (COP)' },
+  PEN: { country: 'Peru', flag: 'pe', name: 'Sol (PEN)' },
+  MXN: { country: 'México', flag: 'mx', name: 'Peso Mexicano (MXN)' },
+  BRL: { country: 'Brasil', flag: 'br', name: 'Real (BRL)' },
+  USD: { country: 'Estados Unidos', flag: 'us', name: 'Dólar (USD)' },
+  EUR: { country: 'Zona do Euro', flag: 'eu', name: 'Euro (EUR)' },
+  GBP: { country: 'Reino Unido', flag: 'gb', name: 'Libra (GBP)' },
+  JPY: { country: 'Japão', flag: 'jp', name: 'Iene (JPY)' },
+  CNY: { country: 'China', flag: 'cn', name: 'Yuan (CNY)' },
+  RUB: { country: 'Rússia', flag: 'ru', name: 'Rublo (RUB)' },
+  ZAR: { country: 'África do Sul', flag: 'za', name: 'Rand (ZAR)' },
+  SDG: { country: 'Sudão', flag: 'sd', name: 'Libra Sudanesa (SDG)' }
+};
+
+// Storage helpers
+function salvarSaldo() { try { localStorage.setItem('dinheiroEmBanco', String(dinheiroEmBanco)); } catch(e) {} }
+function saveTransactions(){ try { localStorage.setItem('transactions', JSON.stringify(transactions)); } catch(e) {} }
+
+// UI helpers
+function showToast(msg) {
+  try {
+    var t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t);
+    setTimeout(function(){ t.classList.add('show'); }, 10);
+    setTimeout(function(){ t.classList.remove('show'); setTimeout(function(){ if(t && t.parentNode){ t.parentNode.removeChild(t); } }, 200); }, 2200);
+  } catch(e) {}
+}
+function formatNumber(num) { try { return new Intl.NumberFormat('pt-BR').format(num); } catch(e) { return String(num); } }
+function formatBRL(num) { try { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(num); } catch(e) { return 'R$ ' + String(num); } }
+function formataNumero(n){ return formatNumber(n); }
+
+// Rates from mock (provided by bancoDeDadosMok.js)
+function getRates(){
+  return (typeof getCurrency === 'function') ? getCurrency() : null;
+}
+
+function converter(){
+  var dinheiro = document.getElementById('dinheiro');
+  if (dinheiro) dinheiro.innerText = formatBRL(dinheiroEmBanco);
+
+  var rates = getRates();
+  var brl = rates && rates.BRL ? rates.BRL : null;
+  if(!rates || !brl){ return; }
+
+  // Build dynamic table
+  buildRankingTable(rates, brl);
+
+  // Ranking summary by countries
+  var millionaireCount = 0;
+  try {
+    function ratio(code){ var v = rates[code]; return v && brl ? (v / brl) : null; }
+    Object.keys(CURRENCIES).forEach(function(code){
+      if(!rates[code]) return; if(code === 'EUR') return; var r = ratio(code);
+      if(r && (dinheiroEmBanco * r >= milionarie)) millionaireCount++;
+    });
+    var rk = document.getElementById('rankingText');
+    if(rk){ rk.textContent = millionaireCount > 0 ? ('Você é milionário em ' + millionaireCount + ' países') : 'Você ainda não é milionário em outros países'; }
+  } catch(e) {}
+
+  // Gap for 1M in Sudan (SDG)
+  try {
+    function ratio(code){ var v = rates[code]; return v && brl ? (v / brl) : null; }
+    var sdgRatio = ratio('SDG');
+    if(sdgRatio){
+      var atualSDG = dinheiroEmBanco * sdgRatio;
+      var faltaBRL = 0;
+      if(atualSDG < milionarie){ faltaBRL = (milionarie - atualSDG) / sdgRatio; }
+      var faltaEl = document.getElementById('falta');
+      if(faltaEl){ faltaEl.innerHTML = (faltaBRL > 0) ? ('Faltam ' + formatBRL(faltaBRL) + ' para ser milionário no Sudão') : 'Você já é milionário no Sudão'; }
+    }
+  } catch(e) {}
+
+  try { renderHistory(); } catch(e) {}
+}
+
+function buildRankingTable(rates, brl){
+  var tbody = document.getElementById('rankingBody'); if(!tbody) return; tbody.innerHTML = '';
+  var onlyMil = false; var chk = document.getElementById('onlyMillionaire'); if(chk){ onlyMil = !!chk.checked; }
+  var limitVal = '10'; var sel = document.getElementById('rowsToShow'); if(sel){ limitVal = sel.value; }
+  function ratio(code){ var v = rates[code]; return v && brl ? (v / brl) : null; }
+  var rows = [];
+  // Usa apenas as moedas mapeadas (com país/flag) e calcula via razão BRL
+  Object.keys(CURRENCIES).forEach(function(code){
+    if(!rates[code]) return; if(code==='EUR') return; var r = ratio(code); if(!r) return;
+    var meta = CURRENCIES[code]; var converted = dinheiroEmBanco * r;
+    if(onlyMil && converted < milionarie) return;
+    rows.push({ code: code, meta: meta, converted: converted });
+  });
+  rows.sort(function(a,b){
+    var am = a.converted >= milionarie ? 1 : 0;
+    var bm = b.converted >= milionarie ? 1 : 0;
+    if(bm !== am) return bm - am;
+    return b.converted - a.converted;
+  });
+  if(limitVal !== 'all'){
+    var n = parseInt(limitVal, 10); if(!isNaN(n) && n > 0){ rows = rows.slice(0, n); }
+  }
+  rows.forEach(function(row, idx){
+    var tr = document.createElement('tr');
+    if(row.converted >= milionarie){ tr.classList.add('row-mil'); }
+    var th = document.createElement('th'); th.textContent = String(idx+1);
+    var tdPais = document.createElement('td'); tdPais.textContent = row.meta.country;
+    var tdFlag = document.createElement('td'); var img = document.createElement('img'); img.width=30; img.height=30; img.alt=row.meta.country; img.src = './bandeiras/' + row.meta.flag + '.svg'; img.onerror = function(){ this.style.display='none'; }; tdFlag.appendChild(img);
+    var tdMoeda = document.createElement('td'); tdMoeda.textContent = row.meta.name;
+    var tdQuant = document.createElement('td'); tdQuant.textContent = formatNumber(Math.round(row.converted));
+    if(row.converted >= milionarie){ var badge = document.createElement('span'); badge.className = 'badge-mil'; badge.textContent = 'Milionário'; tdPais.appendChild(badge); }
+    else { var diff = document.createElement('span'); var falta = Math.max(0, Math.round(milionarie - row.converted)); diff.className = 'badge-diff'; diff.textContent = 'Falta ' + formatNumber(falta); tdPais.appendChild(diff); }
+    tr.appendChild(th); tr.appendChild(tdPais); tr.appendChild(tdFlag); tr.appendChild(tdMoeda); tr.appendChild(tdQuant);
+    tbody.appendChild(tr);
+  });
+}
+
+// History and actions
+function addTransaction(tipo, valor, destino, saldoApos){ var t = { tipo: tipo, valor: Number(valor), destino: destino || null, ts: Date.now(), saldo: Number(saldoApos) }; transactions.push(t); saveTransactions(); try { renderHistory(); } catch(e) {} }
+
+function depositar(valor){ var x = Number(String(valor).replace(',','.')); if(!isFinite(x) || x <= 0){ showToast('Valor inválido'); return; } dinheiroEmBanco += x; salvarSaldo(); addTransaction('deposito', x, null, dinheiroEmBanco); converter(); showToast('Depósito: ' + formatBRL(x)); }
+
+function sacar(valor, destinatario){ var x = Number(String(valor).replace(',','.')); if(!isFinite(x) || x <= 0){ showToast('Valor inválido'); return; } if(x > dinheiroEmBanco){ showToast('Saldo insuficiente'); return; } dinheiroEmBanco -= x; salvarSaldo(); addTransaction(destinatario && destinatario.trim() ? 'transferencia' : 'saque', x, destinatario || null, dinheiroEmBanco); converter(); showToast((destinatario && destinatario.trim()) ? ('Transferência: ' + formatBRL(x) + ' → ' + destinatario.trim()) : ('Saque: ' + formatBRL(x))); }
+
+function _getReferralCode(){ var c = localStorage.getItem('referralCode'); if(c) return c; c='SM-'+Math.random().toString(36).slice(2,8).toUpperCase(); try{ localStorage.setItem('referralCode',c);}catch(e){} return c; }
+function indicarAmigo(){ var code = _getReferralCode(); var link; try{ var base = (location && location.origin) ? (location.origin + location.pathname) : 'https://example.com/'; link = base + '?ref=' + encodeURIComponent(code); }catch(e){ link = 'https://example.com/?ref=' + encodeURIComponent(code); } if(navigator && navigator.share){ navigator.share({ title:'Sou Milionário', text:'Descubra onde você já é milionário! Meu código: '+code, url:link }).then(function(){ showToast('Convite compartilhado'); }).catch(function(){ if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(link).then(function(){ showToast('Link copiado'); }); } else { alert('Compartilhe este link: ' + link); } }); } else if(navigator && navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(link).then(function(){ showToast('Link copiado'); }); } else { alert('Compartilhe este link: ' + link); } }
+
+function renderHistory(){ var ul = document.getElementById('historyList'); if(!ul) return; ul.innerHTML=''; var total = transactions.length; var totalPages = Math.max(1, Math.ceil(total / pageSize)); if(historyPage > totalPages) historyPage = totalPages; if(historyPage < 1) historyPage = 1; var start = total - historyPage * pageSize; var end = start + pageSize; if(start < 0) { end = end - start; start = 0; } var items = transactions.slice(start, end); items.reverse().forEach(function(t){ var li = document.createElement('li'); var left = document.createElement('div'); left.className = 'history-item'; var icon = document.createElement('div'); icon.className = 'icon'; icon.innerHTML = createHistoryIcon(t.tipo); var name = document.createElement('div'); var meta = document.createElement('div'); meta.className = 'history-meta'; var right = document.createElement('div'); right.className = 'history-right'; var date = new Date(t.ts); var dateStr; try { dateStr = new Intl.DateTimeFormat('pt-BR', { dateStyle:'short', timeStyle:'short' }).format(date); } catch(e){ dateStr = date.toLocaleString(); } var tipoLabel = (t.tipo === 'deposito') ? 'Depósito' : (t.tipo === 'saque' ? 'Saque' : 'Transferência'); name.textContent = (t.tipo === 'transferencia' && t.destino) ? (tipoLabel + ' • ' + t.destino) : tipoLabel; meta.textContent = 'Saldo: ' + formatBRL(t.saldo) + ' • ' + dateStr; var amount = document.createElement('div'); amount.className = 'history-amount ' + (t.tipo === 'deposito' ? 'pos' : 'neg'); amount.textContent = (t.tipo === 'deposito' ? '+' : '-') + formatBRL(t.valor); var badge = document.createElement('span'); badge.className = 'badge-saldo'; badge.textContent = 'Saldo ' + formatBRL(t.saldo); left.appendChild(icon); left.appendChild(name); right.appendChild(amount); right.appendChild(badge); li.appendChild(left); li.appendChild(right); li.appendChild(meta); ul.appendChild(li); }); var ind = document.getElementById('historyPageIndicator'); if(ind){ ind.textContent = 'Página ' + historyPage + ' de ' + Math.max(1, Math.ceil(total / pageSize)); } }
+function limparHistorico(){ transactions = []; saveTransactions(); renderHistory(); showToast('Histórico limpo'); }
+function prevHistoryPage(){ historyPage = Math.max(1, historyPage - 1); renderHistory(); }
+function nextHistoryPage(){ var totalPages = Math.max(1, Math.ceil(transactions.length / pageSize)); historyPage = Math.min(totalPages, historyPage + 1); renderHistory(); }
+function createHistoryIcon(tipo){ var stroke='currentColor'; if(tipo==='deposito'){return '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="'+stroke+'" stroke-width="2" stroke-linecap="round"/></svg>';} if(tipo==='transferencia'){return '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 17l10-10" stroke="'+stroke+'" stroke-width="2" stroke-linecap="round"/><path d="M11 7h6v6" stroke="'+stroke+'" stroke-width="2" stroke-linecap="round"/></svg>'; } return '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 12h14" stroke="'+stroke+'" stroke-width="2" stroke-linecap="round"/></svg>'; }
+
+// Modals
+function showModal(id){ var backdrop = document.getElementById('modal-backdrop'); var modal = document.getElementById(id); if(!modal || !backdrop) return; backdrop.hidden=false; modal.hidden=false; backdrop.classList.add('open'); modal.classList.add('open'); }
+function closeAllModals(){ var backdrop = document.getElementById('modal-backdrop'); if(backdrop){ backdrop.classList.remove('open'); } ['depositModal','withdrawModal'].forEach(function(i){ var el = document.getElementById(i); if(!el) return; el.classList.remove('open'); setTimeout(function(){ el.hidden = true; }, 180); }); if(backdrop){ setTimeout(function(){ backdrop.hidden = true; }, 180); } }
+function openDepositModal(){ showModal('depositModal'); var el = document.getElementById('depositAmount'); if(el){ el.value=''; el.focus(); } }
+function openWithdrawModal(){ showModal('withdrawModal'); var a = document.getElementById('withdrawAmount'); if(a){ a.value=''; a.focus(); } var t = document.getElementById('withdrawTo'); if(t){ t.value=''; } }
+function confirmDeposit(){ var el = document.getElementById('depositAmount'); if(!el) return; var v = el.value; closeAllModals(); depositar(v); }
+function confirmWithdraw(){ var a = document.getElementById('withdrawAmount'); var t = document.getElementById('withdrawTo'); if(!a) return; var v = a.value; var to = t ? t.value : ''; closeAllModals(); sacar(v, to); }
+
+// Bind filter
+document.addEventListener('DOMContentLoaded', function(){
+  var chk = document.getElementById('onlyMillionaire'); if(chk){ chk.addEventListener('change', function(){ converter(); }); }
+  var sel = document.getElementById('rowsToShow'); if(sel){ sel.addEventListener('change', function(){ converter(); }); }
+});

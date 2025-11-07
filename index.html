@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Descubra em quais países seu saldo te torna milionário. Compare moedas, veja rankings e compartilhe.">
+  <meta name="theme-color" content="#0a0a0a">
+  <title>Sou Milionário</title>
+  <link rel="stylesheet" href="style.css"/>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="script.js"></script>
+  <script defer src="bancoDeDadosMok.js"></script>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🪙</text></svg>">
+  <meta property="og:title" content="Sou Milionário">
+  <meta property="og:description" content="Em quais países você já é milionário? Compare moedas e descubra.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">🪙</span>
+      <h1>Sou Milionário</h1>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" onclick="converter()" aria-label="Atualizar valores">⟳</button>
+    </div>
+  </header>
+
+  <main class="app-content">
+    <section class="cartao card balance-card">
+      <h2>Saldo em Conta</h2>
+      <div class="balance-amount" id="dinheiro">R$ 0</div>
+      <div class="balance-actions">
+        <button class="btn primary" onclick="converter()">Converter</button>
+      </div>
+    </section>
+    
+    <nav class="actions-row" id="buttonRow">
+      <button onclick="openDepositModal()" class="btn action">Depositar</button>
+      <button onclick="openWithdrawModal()" class="btn action">Sacar/Transferir</button>
+      <button onclick="indicarAmigo()" class="btn action accent">Indicar Amigos</button>
+    </nav>
+
+      <section class="cartao card ranking-card">
+        <h2>Você já é milionário em</h2>
+        <div class="ranking-controls">
+          <label class="switch">
+            <input type="checkbox" id="onlyMillionaire" />
+            <span>Mostrar apenas onde sou milionário</span>
+          </label>
+          <label class="select">
+            <span>Exibir:</span>
+            <select id="rowsToShow">
+              <option value="10" selected>Top 10</option>
+              <option value="25">Top 25</option>
+              <option value="all">Todas</option>
+            </select>
+          </label>
+        </div>
+        <div class="table-wrapper">
+          <table class="ranking-table">
+            <thead>
+            <tr>
+              <th><abbr title="Ranking">#</abbr></th>
+              <th>País</th>
+              <th>Bandeira</th>
+              <th><abbr title="Moeda">Moeda</abbr></th>
+              <th><abbr title="Quantia">Quantia</abbr></th>
+            </tr>
+          </thead>
+          <tbody id="rankingBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+    <!-- <section class="cartao card position-card">
+      <h2>Onde ainda vou ser Milionário</h2>
+        <div class="table-wrapper">
+          <table class="ranking-table">
+            <thead>
+            <tr>
+              <th><abbr title="Ranking">#</abbr></th>
+              <th>País</th>
+              <th>Bandeira</th>
+              <th><abbr title="Moeda">Moeda</abbr></th>
+              <th><abbr title="Falta em BRL">Falta (R$)</abbr></th>
+            </tr>
+          </thead>
+          <tbody id="rankingBody"></tbody>
+          </table>
+        </div>
+    </section> -->
+
+    
+
+    <section class="cartao card history-card">
+      <h2>Histórico</h2>
+      <ul id="historyList" class="history-list" aria-live="polite"></ul>
+      <div class="history-controls">
+        <button class="btn" onclick="prevHistoryPage()">Anterior</button>
+        <span id="historyPageIndicator" class="history-meta">Página 1 de 1</span>
+        <button class="btn" onclick="nextHistoryPage()">Próxima</button>
+        <button class="btn" onclick="limparHistorico()" style="margin-left:auto">Limpar histórico</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modais -->
+  <div id="modal-backdrop" class="modal-backdrop" onclick="closeAllModals()" hidden></div>
+
+  <div id="depositModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="depositTitle" hidden>
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <h3 id="depositTitle">Depósito</h3>
+      <label class="field">
+        <span>Valor (R$)</span>
+        <input id="depositAmount" type="number" min="0" step="0.01" placeholder="0,00" inputmode="decimal" />
+      </label>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeAllModals()">Cancelar</button>
+        <button class="btn primary" onclick="confirmDeposit()">Depositar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="withdrawModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="withdrawTitle" hidden>
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <h3 id="withdrawTitle">Saque/Transferência</h3>
+      <label class="field">
+        <span>Valor (R$)</span>
+        <input id="withdrawAmount" type="number" min="0" step="0.01" placeholder="0,00" inputmode="decimal" />
+      </label>
+      <label class="field">
+        <span>Transferir para (opcional)</span>
+        <input id="withdrawTo" type="text" placeholder="Nome, chave..." />
+      </label>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeAllModals()">Cancelar</button>
+        <button class="btn primary" onclick="confirmWithdraw()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      try { converter(); } catch (e) {}
+      try { renderHistory(); } catch (e) {}
+    });
+  </script>
+</body>
+</html>
