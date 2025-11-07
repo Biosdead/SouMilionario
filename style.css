@@ -25,6 +25,7 @@
 }
 
 * { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
 
 /* Ensure hidden elements don't render */
 [hidden] { display: none !important; }
@@ -129,6 +130,7 @@ body{
   cursor: pointer;
   transition: transform 0.06s ease, filter 0.2s ease;
   box-shadow: var(--shadow);
+  min-height: 44px; /* mobile touch target */
 }
 .btn:hover { filter: brightness(1.05); }
 .btn:active { transform: translateY(1px); }
@@ -295,3 +297,58 @@ body{
   color: var(--text);
 }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+
+/* About card */
+.about-card { margin: 16px auto 28px; max-width: 960px; }
+.about-card h3 { margin: 10px 0 6px; font-size: 15px; color: var(--text-soft); }
+.about-list { margin: 6px 0 0 18px; padding: 0; }
+.about-list li { margin: 6px 0; }
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .app-content { padding: 0 12px 24px; gap: 12px; }
+  .balance-amount { font-size: 36px; }
+  .actions-row .btn { width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .brand h1 { font-size: 16px; }
+  .ranking-table thead th { font-size: 11px; padding: 6px 8px; }
+  .ranking-table tbody td, .ranking-table tbody th { font-size: 12px; padding: 8px 8px; }
+  .ranking-table img { width: 24px; height: 24px; }
+  .about-card { margin: 12px 12px 20px; }
+}
+
+/* Hide less-critical columns on very small screens */
+@media (max-width: 420px) {
+  /* Oculta coluna Moeda (4ª) para ganhar espaço */
+  .ranking-table thead th:nth-child(4),
+  .ranking-table tbody td:nth-child(4) { display: none; }
+}
+
+@media (max-width: 360px) {
+  /* Oculta também a coluna Bandeira (3ª) se necessário */
+  .ranking-table thead th:nth-child(3),
+  .ranking-table tbody td:nth-child(3) { display: none; }
+}
+
+/* Manual theme override via data-theme attribute */
+:root[data-theme="dark"] {
+  --bg-start: #0f1220;
+  --bg-end: #0a0d18;
+  --text: #eaeaf0;
+  --text-soft: #b9bcc9;
+  --card-bg: rgba(255,255,255,0.06);
+  --card-border: rgba(255,255,255,0.12);
+  --shadow: 0 10px 30px rgba(0,0,0,0.25);
+}
+
+:root[data-theme="light"] {
+  --bg-start: #f5f7fb;
+  --bg-end: #eef2f7;
+  --text: #0a0a0a;
+  --text-soft: #5c6270;
+  --card-bg: rgba(255,255,255,0.7);
+  --card-border: rgba(0,0,0,0.08);
+  --shadow: 0 8px 24px rgba(0,0,0,0.1);
+}

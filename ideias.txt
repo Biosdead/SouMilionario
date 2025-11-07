@@ -1,0 +1,5 @@
+Colocar cripto moedas no ranking
+Poder selecionar a moeda do usuário.
+Estudar uma API e fazer dela meu back-end.
+Fazer versão em inglês
+Como fazer o compartilhamento

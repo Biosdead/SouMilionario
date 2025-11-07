@@ -3,105 +3,118 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Descubra em quais países seu saldo te torna milionário. Compare moedas, veja rankings e compartilhe.">
+  <meta name="robots" content="index,follow">
+  <meta name="description" content="Descubra em quais paises seu saldo te torna milionario. Compare moedas, veja rankings e compartilhe.">
+  <meta name="author" content="Sou Milionario">
   <meta name="theme-color" content="#0a0a0a">
-  <title>Sou Milionário</title>
+  <title>Sou Milionario — Ranking de moedas e gamificacao de financas</title>
+  <link rel="canonical" href="./">
+  <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="style.css"/>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <script defer src="script.js"></script>
   <script defer src="bancoDeDadosMok.js"></script>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🪙</text></svg>">
-  <meta property="og:title" content="Sou Milionário">
-  <meta property="og:description" content="Em quais países você já é milionário? Compare moedas e descubra.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%AA%99%3C/text%3E%3C/svg%3E">
+  <meta property="og:title" content="Sou Milionario — Ranking de moedas e gamificacao de financas">
+  <meta property="og:description" content="Veja onde voce ja e milionario ao converter seu saldo para varias moedas. Gamifique sua reserva financeira.">
   <meta property="og:type" content="website">
-  <meta property="og:image" content="">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:site_name" content="Sou Milionario">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Sou Milionario — Ranking de moedas">
+  <meta name="twitter:description" content="Descubra paises onde seu saldo te torna milionario e acompanhe sua evolucao.">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Sou Milionario",
+    "url": "./",
+    "applicationCategory": "FinanceApplication",
+    "operatingSystem": "Web",
+    "description": "App que converte seu saldo em BRL para varias moedas, mostra onde voce e milionario e gamifica sua reserva.",
+    "inLanguage": "pt-BR",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL" }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {"@type": "Question", "name": "Como o app calcula onde sou milionario?", "acceptedAnswer": {"@type": "Answer", "text": "Multiplicamos seu saldo em BRL pela taxa de conversao da moeda e verificamos se o valor e >= 1.000.000."}},
+      {"@type": "Question", "name": "Meus dados ficam salvos onde?", "acceptedAnswer": {"@type": "Answer", "text": "As informacoes ficam no seu dispositivo via localStorage. Nao pedimos cadastro."}},
+      {"@type": "Question", "name": "Posso compartilhar com amigos?", "acceptedAnswer": {"@type": "Answer", "text": "Sim. Use o botao Indicar Amigos para compartilhar um link com seu codigo."}}
+    ]
+  }
+  </script>
 </head>
 <body>
   <header class="app-header">
     <div class="brand">
       <span class="logo" aria-hidden="true">🪙</span>
-      <h1>Sou Milionário</h1>
+      <h1>Sou Milionario</h1>
     </div>
     <div class="header-actions">
-      <button class="icon-btn" onclick="converter()" aria-label="Atualizar valores">⟳</button>
+      <button class="icon-btn" id="themeToggleBtn" onclick="toggleTheme()" aria-label="Alternar tema">🌙</button>
     </div>
   </header>
 
   <main class="app-content">
-    <section class="cartao card balance-card">
+    <section class="cartao card balance-card" id="saldo">
       <h2>Saldo em Conta</h2>
       <div class="balance-amount" id="dinheiro">R$ 0</div>
       <div class="balance-actions">
         <button class="btn primary" onclick="converter()">Converter</button>
       </div>
     </section>
-    
+
     <nav class="actions-row" id="buttonRow">
       <button onclick="openDepositModal()" class="btn action">Depositar</button>
       <button onclick="openWithdrawModal()" class="btn action">Sacar/Transferir</button>
       <button onclick="indicarAmigo()" class="btn action accent">Indicar Amigos</button>
     </nav>
 
-      <section class="cartao card ranking-card">
-        <h2>Você já é milionário em</h2>
-        <div class="ranking-controls">
-          <label class="switch">
-            <input type="checkbox" id="onlyMillionaire" />
-            <span>Mostrar apenas onde sou milionário</span>
-          </label>
-          <label class="select">
-            <span>Exibir:</span>
-            <select id="rowsToShow">
-              <option value="10" selected>Top 10</option>
-              <option value="25">Top 25</option>
-              <option value="all">Todas</option>
-            </select>
-          </label>
-        </div>
-        <div class="table-wrapper">
-          <table class="ranking-table">
-            <thead>
-            <tr>
-              <th><abbr title="Ranking">#</abbr></th>
-              <th>País</th>
-              <th>Bandeira</th>
-              <th><abbr title="Moeda">Moeda</abbr></th>
-              <th><abbr title="Quantia">Quantia</abbr></th>
-            </tr>
-          </thead>
-          <tbody id="rankingBody"></tbody>
-          </table>
-        </div>
-      </section>
+    <section class="cartao card ranking-card" id="ranking">
+      <h2>Voce ja e milionario em</h2>
+      <div class="ranking-controls">
+        <label class="switch">
+          <input type="checkbox" id="onlyMillionaire" />
+          <span>Mostrar apenas onde sou milionario</span>
+        </label>
+        <label class="select">
+          <span>Exibir:</span>
+          <select id="rowsToShow">
+            <option value="10" selected>Top 10</option>
+            <option value="25">Top 25</option>
+            <option value="all">Todas</option>
+          </select>
+        </label>
+      </div>
+      <div class="table-wrapper">
+        <table class="ranking-table">
+          <thead>
+          <tr>
+            <th><abbr title="Ranking">#</abbr></th>
+            <th>Pais</th>
+            <th>Bandeira</th>
+            <th><abbr title="Moeda">Moeda</abbr></th>
+            <th><abbr title="Quantia">Quantia</abbr></th>
+          </tr>
+        </thead>
+        <tbody id="rankingBody"></tbody>
+        </table>
+      </div>
+      <p id="rankingText" class="history-meta"></p>
+    </section>
 
-    <!-- <section class="cartao card position-card">
-      <h2>Onde ainda vou ser Milionário</h2>
-        <div class="table-wrapper">
-          <table class="ranking-table">
-            <thead>
-            <tr>
-              <th><abbr title="Ranking">#</abbr></th>
-              <th>País</th>
-              <th>Bandeira</th>
-              <th><abbr title="Moeda">Moeda</abbr></th>
-              <th><abbr title="Falta em BRL">Falta (R$)</abbr></th>
-            </tr>
-          </thead>
-          <tbody id="rankingBody"></tbody>
-          </table>
-        </div>
-    </section> -->
-
-    
-
-    <section class="cartao card history-card">
-      <h2>Histórico</h2>
+    <section class="cartao card history-card" id="historico">
+      <h2>Historico</h2>
       <ul id="historyList" class="history-list" aria-live="polite"></ul>
       <div class="history-controls">
         <button class="btn" onclick="prevHistoryPage()">Anterior</button>
-        <span id="historyPageIndicator" class="history-meta">Página 1 de 1</span>
-        <button class="btn" onclick="nextHistoryPage()">Próxima</button>
-        <button class="btn" onclick="limparHistorico()" style="margin-left:auto">Limpar histórico</button>
+        <span id="historyPageIndicator" class="history-meta">Pagina 1 de 1</span>
+        <button class="btn" onclick="nextHistoryPage()">Proxima</button>
+        <button class="btn" onclick="limparHistorico()" style="margin-left:auto">Limpar historico</button>
       </div>
     </section>
   </main>
@@ -111,7 +124,7 @@
 
   <div id="depositModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="depositTitle" hidden>
     <div class="modal-card" onclick="event.stopPropagation()">
-      <h3 id="depositTitle">Depósito</h3>
+      <h3 id="depositTitle">Deposito</h3>
       <label class="field">
         <span>Valor (R$)</span>
         <input id="depositAmount" type="number" min="0" step="0.01" placeholder="0,00" inputmode="decimal" />
@@ -125,7 +138,7 @@
 
   <div id="withdrawModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="withdrawTitle" hidden>
     <div class="modal-card" onclick="event.stopPropagation()">
-      <h3 id="withdrawTitle">Saque/Transferência</h3>
+      <h3 id="withdrawTitle">Saque/Transferencia</h3>
       <label class="field">
         <span>Valor (R$)</span>
         <input id="withdrawAmount" type="number" min="0" step="0.01" placeholder="0,00" inputmode="decimal" />
@@ -147,5 +160,27 @@
       try { renderHistory(); } catch (e) {}
     });
   </script>
+
+  <!-- Sobre o aplicativo -->
+  <section class="cartao card about-card" id="sobre">
+    <h2>Sobre este aplicativo</h2>
+    <p>
+      O Sou Milionario foi criado para incentivar a construcao de uma reserva financeira de forma
+      leve e gamificada. Transformamos o habito de guardar dinheiro em uma experiencia divertida,
+      mostrando como seu saldo em reais se compara em outras moedas e em quais paises voce ja seria
+      "milionario".
+    </p>
+
+    <h3>Como funciona</h3>
+    <ul class="about-list">
+      <li><b>Saldo em conta:</b> voce controla seu saldo em BRL. Use Deposito/Saque/Transferencia para simular sua jornada.</li>
+      <li><b>Conversao e ranking:</b> convertemos seu saldo para diversas moedas e ordenamos por valor. Paises onde a quantia convertida e >= 1.000.000 ganham o selo "Milionario".</li>
+      <li><b>Filtros e exibicao:</b> veja apenas onde voce e milionario e ajuste a quantidade de linhas (Top 10/25/Todas).</li>
+      <li><b>Diferenca ate 1M:</b> quando ainda nao e milionario em um pais, exibimos quanto falta.</li>
+      <li><b>Historico:</b> todo movimento registra valor, data e saldo final para acompanhar seu progresso.</li>
+      <li><b>Indicar amigos:</b> compartilhe o app para motivar outras pessoas.</li>
+      <li><b>Privacidade:</b> seus dados ficam no seu dispositivo (localStorage).</li>
+    </ul>
+  </section>
 </body>
 </html>

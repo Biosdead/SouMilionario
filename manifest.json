@@ -1,0 +1,11 @@
+{
+  "name": "Sou Milionario",
+  "short_name": "Milionario",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0a0d18",
+  "theme_color": "#0a0d18",
+  "lang": "pt-BR",
+  "categories": ["finance", "education"],
+  "icons": []
+}

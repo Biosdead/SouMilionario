@@ -160,4 +160,24 @@ function confirmWithdraw(){ var a = document.getElementById('withdrawAmount'); v
 document.addEventListener('DOMContentLoaded', function(){
   var chk = document.getElementById('onlyMillionaire'); if(chk){ chk.addEventListener('change', function(){ converter(); }); }
   var sel = document.getElementById('rowsToShow'); if(sel){ sel.addEventListener('change', function(){ converter(); }); }
+  // init theme
+  try { initTheme(); } catch(e) {}
 });
+
+// Theme toggle
+function getPreferredTheme(){
+  var saved = null; try { saved = localStorage.getItem('theme'); } catch(e) {}
+  if(saved === 'light' || saved === 'dark') return saved;
+  try { return (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark'; } catch(e) { return 'dark'; }
+}
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  try { localStorage.setItem('theme', theme); } catch(e) {}
+  var btn = document.getElementById('themeToggleBtn');
+  if(btn){
+    if(theme === 'light'){ btn.textContent = '🌙'; btn.setAttribute('aria-label','Alternar para modo escuro'); }
+    else { btn.textContent = '☀️'; btn.setAttribute('aria-label','Alternar para modo claro'); }
+  }
+}
+function initTheme(){ applyTheme(getPreferredTheme()); }
+function toggleTheme(){ var current = document.documentElement.getAttribute('data-theme') || getPreferredTheme(); applyTheme(current === 'light' ? 'dark' : 'light'); }
